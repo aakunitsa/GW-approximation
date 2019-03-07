@@ -11775,7 +11775,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Reference-implementation--of-GW">Reference implementation  of GW<a class="anchor-link" href="#Reference-implementation--of-GW">&#182;</a></h1><p>The purpose of this notebook is two-fold. First, it is meant to give an outline of the working equations and implementation of the simplest approximation within GW family, i.e. $G_0W_0$@HF/DFT, and some of its extensions. Second, it provides a playground for testing new reduced-cost GW algorithms such as SPA or optimized virtual space appoach of Bruneval et al. The theory and algorithms behind the code can be found in the papers:</p>
+<h1 id="Reference-implementation--of-GW">Reference implementation  of GW<a class="anchor-link" href="#Reference-implementation--of-GW">&#182;</a></h1><p>The purpose of this notebook is two-fold. First, it is meant to give an outline of the working equations and implementation of the simplest approximation within GW family, i.e. $G_0W_0$@HF/DFT, and some of its extensions. Second, it provides a playground for testing new reduced-cost GW algorithms such as SPA or optimized virtual space approach of Bruneval et al. The theory and algorithms behind the code can be found in the papers:</p>
 <ol>
 <li><p>Bruneval, F., Rangel, T., Hamed, S. M., Shao, M., Yang, C., &amp; Neaton, J. B. (2016). molgw 1: Many-body perturbation theory software for atoms, molecules, and clusters. Computer Physics Communications, 208, 149–161. <a href="https://doi.org/10.1016/J.CPC.2016.06.019">https://doi.org/10.1016/J.CPC.2016.06.019</a></p>
 </li>
@@ -11847,7 +11847,7 @@ $$</p>
 \int_{-\infty}^{+\infty} \frac{d\xi e^{i\xi \eta}}{(\xi + \omega - \epsilon_{k\sigma} + i\eta \times sign(\epsilon_{k\sigma} - \mu))(\xi + \Omega_s - i\eta)} = \begin{cases} \frac{2\pi i}{\omega - \epsilon_{k\sigma} - \Omega_s + 2i\eta} &amp;\mbox{if } \epsilon_{k\sigma} &gt; \mu\\
 0 &amp;\mbox{otherwise }\end{cases}
 $$</p>
-<p>The GW self-energy can therefore be written in terms of tensor contractions:</p>
+<p>The GW self-energy can, therefore, be written in terms of tensor contractions:</p>
 <p>$$
 \Sigma_{nn\sigma}(\omega) = \frac{i}{2\pi} \int_{-\infty}^{+\infty} d \xi e^{i\xi \eta} \Sigma_i \frac{W_{ni\sigma, in\sigma}(\xi)}{\xi + \omega - \epsilon_{i\sigma} - i\eta} + \Sigma_a \frac{W_{na\sigma, an\sigma}(\xi)}{\xi + \omega - \epsilon_{a\sigma} + i\eta}\\
 =-\Sigma_i (ni\sigma|in\sigma) + \Sigma_{is} \frac{\omega_{ni\sigma}^s\omega_{in\sigma}^s}{\omega - \epsilon_{i\sigma} + \Omega_s - 2i\eta} + \Sigma_{as} \frac{\omega_{na\sigma}^s\omega_{an\sigma}^s}{\omega - \epsilon_{a\sigma} - \Omega_s + 2i\eta}
@@ -11941,7 +11941,7 @@ $$</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>For closed shell refrence (i.e. alpha and beta orbitals are the same) A, B matrices will have the block structure shown below:</p>
+<p>For closed shell reference (i.e., alpha and beta orbitals are the same) A, B matrices will have the block structure shown below:</p>
 <p>$$
  \begin{bmatrix}C^{\alpha\alpha} &amp; C^{\alpha\beta}\\C^{\beta\alpha} &amp; C^{\beta\beta}\end{bmatrix},
 $$</p>
@@ -11957,8 +11957,8 @@ B_{ia, jb}^{+} = 2(ia|bj) - c_{HF} (ib|aj) + (1-c_{HF})(ia|f_{xc}^{\alpha\alpha}
 A_{ia, jb}^{-} = \delta_{ij} \delta_{ab} (\epsilon_a - \epsilon_i) -c_{HF} (ij|ab) + (1-c_{HF})(ia|f_{xc}^{\alpha\alpha} - f_{xc}^{\alpha\beta}|jb)\\
 B_{ia, jb}^{-} = -c_{HF} (ib|aj) + (1-c_{HF})(ia|f_{xc}^{\alpha\alpha} - f_{xc}^{\alpha\beta}|bj)
 $$</p>
-<p>The eigenvectors of the original eigenvalue problem are modified: $V^{\pm}_s = \frac{1}{\sqrt{2}}(V^{\alpha}_s \pm V^{\beta}_s)$. The block structure of the eigenvalue problem allows to solve for "+" and "-" component of the eigenvectors separately. Moreover, since we are interested in $X^{+} + Y^{+}$ (they are required to construct $\omega$ tensors, see above) we can solve the "+" eigenvalue problem only. 
-For simplicity current implementation uses HF reference ($c_{HF} = 1$); that is supposed to produce RPA/TDHF screening, however Bruneval's implementation of RPA screening discards exchange contributions to A and B matrices. In order to facillitate comparison we will follow the same approach here.</p>
+<p>The eigenvectors of the original eigenvalue problem are modified: $V^{\pm}_s = \frac{1}{\sqrt{2}}(V^{\alpha}_s \pm V^{\beta}_s)$. The block structure of the eigenvalue problem allows solving for "+" and "-" components of the eigenvectors separately. Moreover, since we are interested in $X^{+} + Y^{+}$ (they are required to construct $\omega$ tensors, see above) we can solve the "+" eigenvalue problem only. 
+For simplicity current implementation uses HF reference ($c_{HF} = 1$); that is supposed to produce RPA/TDHF screening, however, Bruneval's implementation of RPA screening discards exchange contributions to A and B matrices. In order to facilitate comparison we will follow the same approach here.</p>
 
 </div>
 </div>
@@ -12129,7 +12129,7 @@ xpy components
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The values shown above should be compared to those produced by <strong>MolGW</strong> code for the same geometry &amp; basis:</p>
+<p>The values should be compared to those produced by <strong>MolGW</strong> code for the same geometry &amp; basis:</p>
 <p>0.93184532974707635<br>
 1.0055084957782070<br>
 1.0245854271826726<br>
@@ -12140,7 +12140,7 @@ xpy components
 1.9321796168357281<br>
 20.792841443403219<br>
 20.890052672176569</p>
-<p>The eigenvectors associated with the eigenvalues are shown below in the same order:</p>
+<p>The corresponding eigenvectors are shown below in the same order:</p>
 
 <pre><code>  6.9863451824159508E-020   1.0347903982226666E-018  -2.9025622470217256E-016   1.0380723585650678E-016   2.7263929234128543E-016  -1.1782370664958697E-015  -2.1498300574174335E-015   6.0057889311452796E-016 -0.96357983850259821       -3.7314048283888026E-015
 
@@ -12169,7 +12169,7 @@ xpy components
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>In GW@HF the QP equation is modified due to cancellation of the eqchange term:
+<p>In GW@HF the QP equation is modified due to cancellation of the exchange term:
 $$
 \omega = \epsilon_{n\sigma} + \Sigma_{nn\sigma}^{c}(\omega),
 $$
@@ -12414,9 +12414,9 @@ E(HF), eV  E(GW), eV
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="TODO">TODO<a class="anchor-link" href="#TODO">&#182;</a></h1><ol>
-<li>Implement graphical solution of the QP equation (same as in MolGW) and identify the source of descrepancy between the qp energies.</li>
+<li>Implement graphical solution of the QP equation (same as in MolGW) and identify the source of discrepancy between the qp energies.</li>
 <li>Resolution of identity calculation of $\omega_{mn}^{s}$ tensors</li>
-<li>General implementation of GW@DFT (so that it can be used for spin-polarized systems, i.e. UKS refrence)</li>
+<li>General implementation of GW@DFT (so that it can be used for spin-polarized systems, i.e. UKS reference)</li>
 <li>Bethe-Salpeter equation for excitation energies</li>
 </ol>
 
