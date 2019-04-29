@@ -25,6 +25,7 @@ class GW_DFT:
         assert hasattr(self, 'gw_par')
 
 
+        self.nfzc = 0 if not 'nfzc' in gw_par.keys() else gw_par['nfzc']  # read this parameter early and make sure that nocc is adjusted properly
         self._init_sys_params() # sets some basic system parameters
         self._gen_ri_ints()     # generates integrals for RI-GW and
         # RI integrals are now available in self.nmR
@@ -55,6 +56,9 @@ class GW_DFT:
 
         # Screened Coulomb interaction
         self.analytic_W = False if not 'analytic_W' in gw_par.keys() else gw_par['analytic_W']
+
+        # More or less printout
+        self.verbose = True if not 'verbose' in gw_par.keys() else gw_par['verbose']
 
         if self.debug:
             print("Running in debug mode!")
@@ -110,7 +114,8 @@ class GW_DFT:
         zz[zz >= 1.0] = 1.0
 
 
-        xc_contr = (1. - self.alpha) * Sigma_x[self.nocc - self.no_qp:self.nocc + self.nv_qp] - np.diag(self.Vxc)[self.nocc - self.no_qp:self.nocc + self.nv_qp]
+        #xc_contr = (1. - self.alpha) * Sigma_x[self.nocc - self.no_qp:self.nocc + self.nv_qp] - np.diag(self.Vxc)[self.nocc - self.no_qp:self.nocc + self.nv_qp]
+        xc_contr = (1. - self.alpha) * Sigma_x - np.diag(self.Vxc)[self.nocc - self.no_qp:self.nocc + self.nv_qp]
         print("SigX - Vxc")
         print(xc_contr)
         self.Sigma_x_Vxc = np.copy(xc_contr)
@@ -127,7 +132,8 @@ class GW_DFT:
         self.graph_solver_data = {} # Format: state = [[e1, e2, ...], [z1, z2, ...]]
 
         for state in range(self.no_qp + self.nv_qp):
-            z , e = self._find_fixed_point(omega_grid_all[state], np.real(Sigma_c_grid[state, :]) + self.eps[state + self.nocc - self.no_qp] + (1. - self.alpha) * Sigma_x[state + self.nocc - self.no_qp] - np.diag(self.Vxc)[state + self.nocc - self.no_qp])
+            #z , e = self._find_fixed_point(omega_grid_all[state], np.real(Sigma_c_grid[state, :]) + self.eps[state + self.nocc - self.no_qp] + (1. - self.alpha) * Sigma_x[state + self.nocc - self.no_qp] - np.diag(self.Vxc)[state + self.nocc - self.no_qp])
+            z , e = self._find_fixed_point(omega_grid_all[state], np.real(Sigma_c_grid[state, :]) + self.eps[state + self.nocc - self.no_qp] + xc_contr[state])
             if z[0] < 1e-6:
                 print("Graphical solver failed for state %d" % (state + 1))
             # Do nothing since the array cell already contains HF orbital energy
@@ -144,7 +150,35 @@ class GW_DFT:
 
         print("Done!")
 
-    def print_summary(self):
+        self.evgw_iter = 0 if not 'evgw_iter' in gw_par.keys() else gw_par['evgw_iter']
+
+        if self.evgw_iter > 0:
+            print("Starting evGW loop...")
+            print("Number of iterations is %d" % (self.evgw_iter))
+            self.verbose = False
+            # Will use QP produced by graphical solver to perform iteration;
+            # Should also properly take care of screening if analytic_W is set 
+
+            eps0 = np.copy(self.eps[self.nocc - self.no_qp:self.nocc + self.nv_qp])
+
+            for _ in range(self.evgw_iter):
+                if self.analytic_W:
+                    # update omega and xpy
+                    self._RPA(gw_par)
+
+                omega_grid_all_ev = omega_grid + self.eps[self.nocc - self.no_qp:self.nocc + self.nv_qp].reshape((-1, 1))
+                Sigma_c_grid = self._calculate_iGW(omega_grid_all_ev) # self-energy matrix
+                qp_ev = eps0 + (np.real(Sigma_c_grid[:, nomega_grid]) + xc_contr)
+
+                print(qp_ev * psi4.constants.hartree2ev)
+                self.eps[self.nocc - self.no_qp:self.nocc + self.nv_qp] = np.copy(qp_ev)
+
+            print("Done with evGW!")
+
+
+
+
+    def print_summary(self, extended=False):
 
         Ha2eV = psi4.constants.hartree2ev
 
@@ -152,13 +186,14 @@ class GW_DFT:
         for i in range(self.no_qp + self.nv_qp):
             print("%13.6f  %13.6f  %13.6f" % (self.qp_molgw_lin_[i]*Ha2eV, self.qp_molgw_graph_[i]*Ha2eV, self.zz[i]))
 
-        print("Graphical solver printout")
-        for s in self.graph_solver_data:
-            print("State %d" % (s))
-            print("E_qp, eV   Z")
-            e_vals, z_vals = self.graph_solver_data[s]
-            for e, z in zip(e_vals, z_vals):
-                print("%13.6f %13.6f" % (e * Ha2eV, z))
+        if extended:
+            print("Graphical solver printout")
+            for s in self.graph_solver_data:
+                print("State %d" % (s))
+                print("E_qp, eV   Z")
+                e_vals, z_vals = self.graph_solver_data[s]
+                for e, z in zip(e_vals, z_vals):
+                    print("%13.6f %13.6f" % (e * Ha2eV, z))
 
 
     def int_dump(self, filename='INTDUMP'):
@@ -184,14 +219,19 @@ class GW_DFT:
 
     def _init_sys_params(self):
 
-        self.nocc = self.scf_wfn.nalpha()
-        self.nbf = self.scf_wfn.nmo()
+        self.nocc = self.scf_wfn.nalpha() - self.nfzc
+        self.nbf = self.scf_wfn.nmo() - self.nfzc
         self.nvir = self.nbf - self.nocc
-        self.C = self.scf_wfn.Ca()
 
-        self.Cocc = self.scf_wfn.Ca_subset("AO", "OCC")
+        self.C = np.asarray(self.scf_wfn.Ca())
+        self.Cocc = np.asarray(self.scf_wfn.Ca_subset("AO", "OCC"))
+        self.eps = np.copy(np.asarray(self.scf_wfn.epsilon_a()))
 
-        self.eps = np.asarray(self.scf_wfn.epsilon_a())
+        if self.nfzc > 0:
+            # Reset orbital data
+            self.C = np.copy(self.C[:, self.nfzc:])
+            self.Cocc = np.copy(self.Cocc[:, self.nfzc:])
+            self.eps = np.copy(self.eps[self.nfzc:])
 
         # print a quick summary
         print("Number of basis functions: ", self.nbf)
@@ -359,6 +399,7 @@ class GW_DFT:
         nocc = self.nocc
         nvir = self.nvir
         eps = self.eps
+        #print("eps : ", eps)
 
         no_qp = self.no_qp
         nv_qp = self.nv_qp
@@ -395,7 +436,8 @@ class GW_DFT:
             i_rtia = np.einsum("iaQ, rtQ ->rtia", self.nmR[:nocc, nocc:, :], self.nmR)
             i_rtia = i_rtia.reshape((nbf, nbf, nocc*nvir))
             omega_rts = np.sqrt(2.) * np.einsum("rtk, ks->rts", i_rtia, self.xpy)
-            print("Shape of omega tensor is ", omega_rts.shape)
+            if self.verbose:
+                print("Shape of omega tensor is ", omega_rts.shape)
 
             Ds_p = self.omega_s.reshape((-1, 1)) + im_grid  - 0.5j*self.eta
             Ds_m = -self.omega_s.reshape((-1, 1)) + im_grid  + 0.5j*self.eta
@@ -469,9 +511,10 @@ class GW_DFT:
         if self.low_mem:
             mem_res = 4. * ngrid * nocc * nvir + naux + naux**2 + 2 * ngrid * naux**2
 
-        print("Calculation of the integral term requires %8.3f Gb" %(mem_int * 8e-9)) # Each standard double is 8 bytes
-        print("Calculation of the residue term requires  %8.3f Gb" %(mem_res * 8e-9))
-        if self.low_mem:
+        if self.verbose:
+            print("Calculation of the integral term requires %8.3f Gb" %(mem_int * 8e-9)) # Each standard double is 8 bytes
+            print("Calculation of the residue term requires  %8.3f Gb" %(mem_res * 8e-9))
+        if self.low_mem and self.verbose:
             print("Using low-memory algorithm")
 
         In = np.zeros(omega_grid_all.shape, dtype=np.complex128) # Integral term
