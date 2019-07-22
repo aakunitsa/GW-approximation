@@ -3,7 +3,7 @@ Reference Python implementation of GW
 
 **Dependencies**:
 - Python 3 (version >= 3.6)
-- Psi4 1.2 (please refer to http://vergil.chemistry.gatech.edu/nu-psicode/install-v1.2.html for installation instrunctions)
+- Psi4 1.2 (please refer to http://vergil.chemistry.gatech.edu/nu-psicode/install-v1.2.html for installation instructions)
 
 **Brief description of the contents**:
 - GW_HF.ipynb contains a simple vanilla implementation of analytic GW@HF with a detailed review of theory and some derivations.
@@ -13,7 +13,7 @@ Reference Python implementation of GW
    2. Contour deformation 
    3. RPA for W
    4. evGW 
-- Folder tests contains some sample calcuations
+- Folder _tests_ contains some sample calcuations
 
 **Author**:
 
